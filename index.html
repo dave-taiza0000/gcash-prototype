@@ -488,12 +488,12 @@ body{background:radial-gradient(1000px 700px at 85% -10%,#D9E8FF 0%,#E9EEF6 55%,
 .p-reset{width:100%;border:0;background:#EDF2FA;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px}
 .p-fine{font-size:10.5px;color:#AAB4C4;text-align:center}
 
-@media (max-width:900px){
-  body{padding:0;gap:0}
-  .panel{width:100%;order:2;border-radius:20px;margin:14px}
-  .phone{width:100vw;height:100dvh;border-radius:0;padding:0;box-shadow:none}
-  .screen{border-radius:0}
-  .island{display:none}
+/* ============ PHONE-SIZED APP (always) ============ */
+body{background:var(--bg);padding:0;gap:0;align-items:center}
+.panel{display:none}
+.island{display:none}
+.phone{width:100vw;max-width:440px;height:100dvh;border-radius:0;padding:0;box-shadow:none}
+.screen{border-radius:0}
 }
 </style>
 </head>
