@@ -1172,15 +1172,28 @@ function updatePhone(){
   else{el.classList.remove('placeholder');el.textContent=fmtPhone(phoneDigits);}
   $('btnContinue').disabled=phoneDigits.length!==10;
 }
+const VALID_PHONE='9171234567';   // only 0917 123 4567 can log in
 function continueLogin(){
-  if(phoneDigits.length===10){userPhone=phoneDigits;$('profNum').textContent='+63 '+fmtPhone(userPhone);go('s-mpin');}
+  if(phoneDigits.length!==10)return;
+  if(phoneDigits!==VALID_PHONE){
+    toast('Number not registered 😕 Demo account: 0917 123 4567');
+    const el=$('phoneNum');
+    el.style.color='#FFD1D1';
+    setTimeout(()=>el.style.color='',900);
+    return;
+  }
+  userPhone=phoneDigits;
+  $('profNum').textContent='+63 '+fmtPhone(userPhone);
+  go('s-mpin');
+}
 }
 
 /* ---------- 2. MPIN ---------- */
 let mpin='';
 function mkey(k){
-  if(k==='del') mpin=mpin.slice(0,-1);
-  else if(mpin.length<4) mpin+=k;
+  if(k==='del') phoneDigits=phoneDigits.slice(0,-1);
+  else if(phoneDigits===''&&k==='0'){toast('Skip the leading 0 — +63 is already included 😊');return;}
+  else if(phoneDigits.length<10) phoneDigits+=k;
   document.querySelectorAll('#mpinDots i').forEach((d,i)=>d.classList.toggle('filled',i<mpin.length));
   if(mpin.length===4) setTimeout(()=>{const m=mpin;mpin='';document.querySelectorAll('#mpinDots i').forEach(d=>d.classList.remove('filled'));if(m.length===4){toast('Welcome back, Juan! 👋');go('s-new');}},350);
 }
