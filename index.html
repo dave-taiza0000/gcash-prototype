@@ -290,6 +290,20 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .layer-bar i{display:block;height:100%;width:80%;background:linear-gradient(90deg,#38D9A9,#00A86B);border-radius:5px}
 .btn-danger{display:block;width:calc(100% - 28px);margin:6px 14px 26px;background:#FFF0F0;color:var(--red);border:1.5px solid #FFD7D7;border-radius:15px;padding:14px;font-weight:700;font-size:14px;cursor:pointer}
 
+/* ============ SECURITY ALERT (transaction notifications) ============ */
+.sec-alert{position:absolute;inset:0;background:rgba(8,15,30,.62);display:none;align-items:center;justify-content:center;z-index:85;padding:24px}
+.sec-alert.show{display:flex;animation:fadein .25s ease}
+.sa-card{background:#fff;border-radius:22px;padding:24px 20px;width:100%;max-width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+.sa-ic{width:58px;height:58px;border-radius:19px;background:linear-gradient(135deg,#FF6B6B,#E5484D);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px}
+.sa-card h3{font-size:18px;color:var(--ink)}
+.sa-card p{font-size:12.5px;color:var(--sub);line-height:1.5;margin:6px 0 12px}
+.sa-txn{background:#F5F8FD;border:1px solid var(--line);border-radius:14px;padding:11px 12px;font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+.sa-amo{font-size:13px}
+.sa-amo.in{color:var(--green)}
+.sa-card .sa-q{font-size:14px;color:var(--ink);font-weight:700;margin:14px 0 12px}
+.sa-yes{width:100%;border:0;background:var(--green);color:#fff;border-radius:14px;padding:13px;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;box-shadow:0 5px 12px rgba(0,168,107,.35)}
+.sa-no{width:100%;border:0;background:#FFF0F0;color:var(--red);border:1.5px solid #FFD7D7;border-radius:14px;padding:13px;font-weight:700;font-size:13.5px;cursor:pointer}
+
 /* ============ 9. SMART SPLIT ============ */
 .split-sum{margin:12px 14px 0;background:linear-gradient(135deg,#0A84FF,#0457C4);border-radius:20px;padding:18px;color:#fff;box-shadow:0 12px 26px rgba(10,100,230,.3)}
 .split-sum .ss-top{display:flex;justify-content:space-between;align-items:center}
@@ -610,7 +624,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
       <h2>Paid!</h2>
       <div class="succ-amt">₱250.00</div>
       <p>7-Eleven • Tap to Pay</p>
-      <button onclick="go('s-home')">Done</button>
+      <button onclick="tapFinish()">Done</button>
     </div>
   </div>
 </section>
@@ -741,7 +755,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
   <div class="sb dark"><span class="t">9:41</span><span class="si"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="batt"></span></span></div>
   <div class="sub-head">
     <button class="back" onclick="go('s-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <h2>Transactions</h2><span></span>
+    <h2>Transactions</h2><button class="link" onclick="openAddTxn()">＋ Add</button>
   </div>
   <div class="txn-tools">
     <div class="search">
@@ -755,6 +769,33 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
     </div>
   </div>
   <div class="scroll txn-body" id="txnList"></div>
+
+  <!-- Add Transaction sheet -->
+  <div class="backdrop" id="txBack" onclick="closeAddTxn()"></div>
+  <div class="sheet" id="txSheet">
+    <div class="sheet-grab"></div>
+    <h3>Add Transaction</h3>
+    <p class="sheet-sub">Log an expense or income — updates wallet, history &amp; Money Manager</p>
+    <p class="bill-h" style="margin:0 0 8px">TYPE</p>
+    <div class="chips" style="margin-bottom:12px">
+      <button class="chip on" onclick="setTxType(this,'out')">Money Out</button>
+      <button class="chip" onclick="setTxType(this,'in')">Money In</button>
+    </div>
+    <div class="acct-wrap" style="margin:0 0 10px">
+      <label>NAME</label>
+      <input id="txName" placeholder="e.g. Lunch at Jollibee" maxlength="26">
+    </div>
+    <p class="bill-h" style="margin:0 0 8px">QUICK NAMES (RECENT FOOD &amp; MORE)</p>
+    <div class="chips" style="margin-bottom:12px" id="txQuick"></div>
+    <div class="acct-wrap" style="margin:0 0 12px">
+      <label>AMOUNT (₱)</label>
+      <input id="txAmt" inputmode="numeric" placeholder="e.g. 150" oninput="this.value=this.value.replace(/[^\d.]/g,'')">
+    </div>
+    <p class="bill-h" style="margin:0 0 8px">CATEGORY</p>
+    <div class="icon-grid" id="txIcons"></div>
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="saveTxn()">Save Transaction</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeAddTxn()">Cancel</button>
+  </div>
 </section>
 
 <!-- 7b. TRANSACTION DETAIL -->
@@ -795,7 +836,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
     <div class="sec-list">
       <div class="sec-row" onclick="flip(this)"><span class="sec-emo">🔒</span><div class="sec-tx"><b>Device Lock</b><span>Lock GCash whenever your device is locked</span></div><div class="switch on"></div></div>
       <div class="sec-row" onclick="flip(this)"><span class="sec-emo">👤</span><div class="sec-tx"><b>Face ID / Fingerprint</b><span>Unlock the app with biometrics</span></div><div class="switch on"></div></div>
-      <div class="sec-row" onclick="flip(this)"><span class="sec-emo">🔔</span><div class="sec-tx"><b>Transaction Alerts</b><span>Push + SMS for every payment</span></div><div class="switch on"></div></div>
+      <div class="sec-row" onclick="flipTxnAlerts(this)"><span class="sec-emo">🔔</span><div class="sec-tx"><b>Transaction Alerts</b><span>"Was this you?" popup on every recorded transaction</span></div><div class="switch on"></div></div>
       <div class="sec-row" onclick="flip(this)"><span class="sec-emo">📩</span><div class="sec-tx"><b>Login Notifications</b><span>Alert me of new device logins</span></div><div class="switch"></div></div>
     </div>
 
@@ -938,7 +979,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
     <p class="succ-to" id="succName">—</p>
     <p class="succ-meta" id="succTime">—</p>
     <div class="succ-card">Ref No.<b id="succRef">—</b></div>
-    <button class="btn-primary" onclick="go('s-home')">Back to Home</button>
+    <button class="btn-primary" onclick="succHome()">Back to Home</button>
     <button class="btn-ghost" onclick="toast('Receipt shared 📤')">Share Receipt</button>
   </div>
 </section>
@@ -1146,6 +1187,19 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
   </div>
 </section>
 
+<!-- Security alert (fires whenever a transaction is recorded) -->
+<div class="sec-alert" id="secAlert">
+  <div class="sa-card">
+    <div class="sa-ic">🛡️</div>
+    <h3>Security Alert</h3>
+    <p>A new transaction was just recorded on your account</p>
+    <div class="sa-txn"><span id="saIc">🍔</span><span id="saName">—</span><span id="saAmt" class="sa-amo">—</span></div>
+    <p class="sa-q">Was this you?</p>
+    <button class="sa-yes" onclick="saYes()">✓ Yes, it was me</button>
+    <button class="sa-no" onclick="saNo()">🚨 Not me — secure my account</button>
+  </div>
+</div>
+
 <!-- overlay + toast -->
 <div class="ovl" id="ovl"><div class="spin"></div><span id="ovText" style="font-size:14px;font-weight:600;color:var(--ink)">Sending…</span></div>
 <div class="toast" id="toastEl"></div>
@@ -1324,6 +1378,81 @@ function openTxn(i){
   go('s-txndetail');
 }
 
+/* ---------- ADD TRANSACTION (wired: wallet + history + Money Manager) ---------- */
+const TXNCATS=[
+  {ic:'🍔',n:'Food & Dining',bg:'#FFE8D6'},
+  {ic:'🚌',n:'Transportation',bg:'#DCEBFF'},
+  {ic:'🛒',n:'Groceries',bg:'#F3E8FF'},
+  {ic:'🛍️',n:'Shopping',bg:'#F1E8FF'},
+  {ic:'💡',n:'Bills & Utilities',bg:'#E1F7F0'},
+  {ic:'📱',n:'Load & Telco',bg:'#FFF3DC'},
+  {ic:'🎬',n:'Entertainment',bg:'#E8EAFB'},
+  {ic:'🏥',n:'Health',bg:'#FFE9E9'},
+  {ic:'📚',n:'Education',bg:'#EAF3FF'},
+  {ic:'🐶',n:'Pets',bg:'#FFF4D6'},
+  {ic:'📦',n:'Other',bg:'#EDF1F7'},
+  {ic:'💸',n:'Transfer',bg:'#DCEBFF'},
+  {ic:'💵',n:'Income',bg:'#DFF5E7'},
+];
+const TXQUICK=['Jollibee','Starbucks','Milk Tea','Grab','7-Eleven','McDonalds','Gym','Pharmacy'];
+let txSel='Food & Dining',txType='out';
+function openAddTxn(){
+  txType='out';txSel='Food & Dining';
+  $('txName').value='';$('txAmt').value='';
+  const chips=document.querySelectorAll('#txSheet .chips')[0].children;
+  chips[0].classList.add('on');chips[1].classList.remove('on');
+  renderTxIcons();
+  $('txBack').classList.add('show');$('txSheet').classList.add('show');
+}
+function setTxType(el,t){[...el.parentNode.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');txType=t;}
+function quickName(n){$('txName').value=n;}
+function renderTxIcons(){
+  $('txIcons').innerHTML=TXNCATS.map(c=>`<button class="ibtn${c.n===txSel?' on':''}" title="${c.n}" onclick="txSel='${c.n}';renderTxIcons()">${c.ic}</button>`).join('');
+  $('txQuick').innerHTML=TXQUICK.map(n=>`<button class="chip" onclick="quickName('${n}')">${n}</button>`).join('');
+}
+function saveTxn(){
+  const name=$('txName').value.trim();
+  const v=Math.round((Number($('txAmt').value)||0)*100)/100;
+  if(!name){toast('Enter a name ✍️');return;}
+  if(!v||v<1){toast('Enter an amount of at least ₱1');return;}
+  if(txType==='out'&&v>balance){toast('Insufficient wallet balance 😅');return;}
+  const c=TXNCATS.find(x=>x.n===txSel)||TXNCATS[0];
+  const signed=txType==='out'?-v:v;
+  balance=Math.round((balance+signed)*100)/100;
+  TXNS[0].items.unshift({ic:c.ic,bg:c.bg,name,cat:txSel,amt:signed,tm:nowTime()});
+  const mmc=MMDATA['June 2025']&&MMDATA['June 2025'].cats.find(x=>x.n===txSel);
+  if(mmc&&txType==='out')mmc.sp=Math.round((mmc.sp+v)*100)/100;
+  buildAll();renderHome();renderTxns();renderMM();
+  closeAddTxn();
+  toast(`${txType==='out'?'−':'+'}${peso0(v)} ${name} logged ✅`);
+  securityAlert({name,amt:signed,ic:c.ic});
+}
+function closeAddTxn(){$('txBack').classList.remove('show');$('txSheet').classList.remove('show');}
+
+/* ---------- SECURITY ALERT (fires on every recorded transaction) ---------- */
+let SEC={txnAlerts:true},pendingAlert=null;
+function securityAlert(a){
+  if(!SEC.txnAlerts)return;
+  $('saIc').textContent=a.ic||'💳';
+  $('saName').textContent=a.name;
+  const el=$('saAmt');
+  el.textContent=(a.amt>0?'+':'−')+peso(Math.abs(a.amt))+' • '+nowTime();
+  el.className='sa-amo '+(a.amt>0?'in':'');
+  NOTIFS.unshift({ic:'🛡️',bg:'#FFE9E9',t:'Transaction alert',d:`${a.name} ${(a.amt>0?'+':'−')}${peso(Math.abs(a.amt))} — if this wasn't you, secure your account.`,tm:nowTime(),unread:true});
+  renderNotifs();
+  $('secAlert').classList.add('show');
+}
+function saYes(){$('secAlert').classList.remove('show');toast('Thanks for confirming — activity marked safe ✅');}
+function saNo(){$('secAlert').classList.remove('show');toast('🚨 Account secured — MPIN reset link sent');setTimeout(()=>go('s-login'),900);}
+function flipTxnAlerts(row){
+  const s=row.querySelector('.switch');
+  s.classList.toggle('on');
+  SEC.txnAlerts=s.classList.contains('on');
+  toast(SEC.txnAlerts?'Transaction alerts enabled ✅':'Transaction alerts off — new activity won\'t notify you');
+}
+function succHome(){const a=pendingAlert;pendingAlert=null;go('s-home');if(a)setTimeout(()=>securityAlert(a),400);}
+function tapFinish(){const a=pendingAlert;pendingAlert=null;go('s-home');if(a)setTimeout(()=>securityAlert(a),400);}
+
 /* ---------- 6. MONEY MANAGER ---------- */
 const MMDATA={
   'June 2025':{cats:[
@@ -1426,6 +1555,7 @@ function saveEditCat(){
     TXNS[0].items.unshift({ic:c.ic,bg:c.c+'22',name:c.n,cat:'Money Manager',amt:-add,tm:nowTime()});
     buildAll();renderHome();
     toast(`Logged ${peso0(add)} to ${c.n} ✅`);
+    securityAlert({name:c.n,amt:-add,ic:c.ic});
     did=true;
   }
   if(!did)toast('Nothing to save — enter an amount ✍️');
@@ -1612,6 +1742,7 @@ function processPayment(o){
     $('succRef').textContent=genRef();
     $('ovl').classList.remove('show');
     amt='0';renderAmt();
+    pendingAlert={name:o.txn.name,amt:o.txn.amt,ic:o.txn.ic};
     go('s-success');
   },1300);
 }
@@ -1627,6 +1758,7 @@ function goTap(){
     balance-=250;
     TXNS[0].items.unshift({ic:'🏪',bg:'#FFE3CC',name:'7-Eleven',cat:'Tap to Pay',amt:-250,tm:nowTime()});
     buildAll();renderHome();
+    pendingAlert={name:'7-Eleven • Tap to Pay',amt:-250,ic:'🏪'};
     $('tapWait').style.display='none';$('tapDone').style.display='';
   },2600);
 }
@@ -1891,6 +2023,7 @@ function cashIn(v){
   TXNS[0].items.unshift({ic,bg:'#DFF5E7',name:'Cash In • '+ciSource,cat:'Add Money',amt:v,tm:nowTime()});
   buildAll();renderHome();closeCashIn();
   toast(`Added ${peso0(v)} from ${ciSource} 🎉`);
+  securityAlert({name:'Cash In • '+ciSource,amt:v,ic:'💵'});
 }
 
 /* ---------- INIT ---------- */
