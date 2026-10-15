@@ -110,6 +110,11 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .pop{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
 @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
 
+/* icon picker */
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:4px}
+.ibtn{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:9px 0;font-size:20px;cursor:pointer;transition:.15s}
+.ibtn.on{border-color:var(--blue);background:#EAF3FF;transform:scale(1.06)}
+
 /* ============ 1. LOGIN ============ */
 #s-login{background:linear-gradient(165deg,#0A84FF 0%,#0160DE 55%,#0047A8 100%)}
 .login-wrap{flex:1;display:flex;flex-direction:column;padding:8px 26px 30px;overflow:hidden}
@@ -206,7 +211,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .mm-month b{font-size:15px;color:var(--ink)}
 .mm-nav{width:34px;height:34px;border-radius:11px;border:0;background:#EDF2FA;color:var(--blue2);font-size:17px;font-weight:800;cursor:pointer}
 .mm-card{margin:12px 14px 0;padding:22px 18px;text-align:center}
-.donut{width:158px;height:158px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.donut{width:158px;height:158px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .donut-in{width:112px;height:112px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .donut-in b{font-size:20px;color:var(--ink)}
 .donut-in span{font-size:11.5px;color:var(--sub);margin-top:2px}
@@ -221,7 +226,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .st span{font-size:10.5px;color:var(--sub)}
 .mm-h{font-size:14.5px;color:var(--ink);margin:18px 22px 10px}
 #mmCats{padding:0 14px}
-.cat{background:#fff;border-radius:16px;padding:13px 15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(20,40,80,.04)}
+.cat{background:#fff;border-radius:16px;padding:13px 15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(20,40,80,.04);cursor:pointer}
 .cat-top{display:flex;align-items:center;gap:11px;margin-bottom:10px}
 .cat-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .cat-nm{flex:1}
@@ -563,18 +568,30 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
     <button class="bn" onclick="go('s-profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Profile</span></button>
   </nav>
 
-  <!-- Cash In sheet -->
+  <!-- Cash In sheet (source + quick + custom) -->
   <div class="backdrop" id="cashBack" onclick="closeCashIn()"></div>
   <div class="sheet" id="cashSheet">
     <div class="sheet-grab"></div>
     <h3>Add Money</h3>
-    <p class="sheet-sub">Pick a quick amount to cash in (demo)</p>
+    <p class="sheet-sub">Choose a source and amount to cash in</p>
+    <p class="bill-h" style="margin:0 0 8px">SOURCE</p>
+    <div class="chips" style="margin-bottom:14px">
+      <button class="chip on" onclick="ciSetSrc(this,'BPI')">🏦 BPI</button>
+      <button class="chip" onclick="ciSetSrc(this,'7-Eleven')">🏪 7-Eleven</button>
+      <button class="chip" onclick="ciSetSrc(this,'Mastercard')">💳 Mastercard</button>
+    </div>
+    <p class="bill-h" style="margin:0 0 8px">QUICK AMOUNTS</p>
     <div class="quick-amts">
       <button onclick="cashIn(100)">₱100</button>
       <button onclick="cashIn(500)">₱500</button>
       <button onclick="cashIn(1000)">₱1,000</button>
       <button onclick="cashIn(2000)">₱2,000</button>
     </div>
+    <div class="acct-wrap" style="margin:14px 0 0">
+      <label>OR ENTER A CUSTOM AMOUNT (₱)</label>
+      <input id="ciCustom" inputmode="numeric" placeholder="e.g. 350" oninput="this.value=this.value.replace(/[^\d.]/g,'')">
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:12px" onclick="cashInCustom()">Add Money</button>
   </div>
 </section>
 
@@ -653,7 +670,8 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
       <button class="mm-nav" onclick="mmShift(1)">›</button>
     </div>
     <div class="mm-card card">
-      <div class="donut" id="mmDonut"><div class="donut-in"><b id="mmSpent">₱0</b><span id="mmBudgetTxt">of ₱0</span></div></div>
+      <div class="donut" id="mmDonut" onclick="mmToggleView()"><div class="donut-in"><b id="mmSpent">₱0</b><span id="mmBudgetTxt">of ₱0</span></div></div>
+      <p style="font-size:10.5px;color:var(--sub);margin-bottom:12px">👆 Tap donut to switch ₱ / % • Tap a category to add spending</p>
       <div class="legend" id="mmLegend"></div>
       <div class="mm-stats">
         <div class="st"><b id="mmLeft">₱0</b><span>LEFT TO SPEND</span></div>
@@ -663,11 +681,58 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
     </div>
     <h3 class="mm-h">Budgets by Category</h3>
     <div id="mmCats"></div>
-    <button class="add-cat" onclick="toast('Add a custom budget category (demo) ✨')">＋ Add Budget Category</button>
+    <button class="add-cat" onclick="openAddBudget()">＋ Add Budget Category</button>
     <div class="shared-card">
       <span class="s-ic">👥</span>
       <div><b>Shared budgeting</b><span>Home Bills budget is shared with 2 housemates — ₱1,200/month each, tracked together in real time.</span></div>
     </div>
+  </div>
+
+  <!-- Add Budget sheet -->
+  <div class="backdrop" id="abBack" onclick="closeAddBudget()"></div>
+  <div class="sheet" id="abSheet">
+    <div class="sheet-grab"></div>
+    <h3>Add Budget Category</h3>
+    <p class="sheet-sub">Track a new spending category for <b id="abMonth">June 2025</b></p>
+    <div class="acct-wrap" style="margin:0 0 10px">
+      <label>CATEGORY NAME</label>
+      <input id="abName" placeholder="e.g. Health &amp; Fitness" maxlength="24">
+    </div>
+    <div class="acct-wrap" style="margin:0 0 12px">
+      <label>MONTHLY BUDGET (₱)</label>
+      <input id="abBudget" inputmode="numeric" placeholder="e.g. 2000" oninput="this.value=this.value.replace(/[^\d.]/g,'')">
+    </div>
+    <p class="bill-h" style="margin:0 0 8px">PICK AN ICON</p>
+    <div class="icon-grid" id="abIcons"></div>
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="saveBudget()">Add Category</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeAddBudget()">Cancel</button>
+  </div>
+
+  <!-- Edit Category sheet (add spending / edit budget) -->
+  <div class="backdrop" id="edBack" onclick="closeEditCat()"></div>
+  <div class="sheet" id="edSheet">
+    <div class="sheet-grab"></div>
+    <h3 id="edTitle">Category</h3>
+    <p class="sheet-sub" id="edSub">—</p>
+    <div class="cs-row"><span>Spent so far</span><b id="edSpent">—</b></div>
+    <div class="cs-row"><span>Monthly budget</span><b id="edBud">—</b></div>
+    <div class="cs-row" style="border:0"><span>Percent used</span><b id="edPct">—</b></div>
+    <div class="acct-wrap" style="margin:12px 0 0">
+      <label>ADD SPENDING (₱) — DEDUCTS FROM WALLET</label>
+      <input id="edAdd" inputmode="numeric" placeholder="e.g. 150" oninput="this.value=this.value.replace(/[^\d.]/g,'')">
+    </div>
+    <div class="quick-amts" style="margin-top:8px">
+      <button onclick="edQuick(50)">+50</button>
+      <button onclick="edQuick(100)">+100</button>
+      <button onclick="edQuick(500)">+500</button>
+      <button onclick="edQuick(1000)">+1k</button>
+    </div>
+    <div class="acct-wrap" style="margin:12px 0 0">
+      <label>EDIT MONTHLY BUDGET (₱)</label>
+      <input id="edBudget" inputmode="numeric" placeholder="e.g. 2000" oninput="this.value=this.value.replace(/[^\d.]/g,'')">
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="saveEditCat()">Save Changes</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeEditCat()">Cancel</button>
   </div>
 </section>
 
@@ -754,19 +819,20 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
   <div class="sub-head">
     <button class="back" onclick="go('s-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
     <h2>Smart Split</h2>
-    <button class="link" onclick="toast('Create Split — pick a group &amp; amount (demo) ✨')">＋ New</button>
+    <button class="link" onclick="openNewSplit()">＋ New</button>
   </div>
   <div class="scroll">
     <div class="split-sum">
-      <div class="ss-top"><h3>🍽️ Team Dinner — Inihaw</h3></div>
-      <div class="ss-amt">₱4,800.00</div>
-      <div class="ss-sub">Split equally • ₱960.00 each • 5 people</div>
+      <div class="ss-top"><h3 id="splitTitle">🍽️ Team Dinner — Inihaw</h3></div>
+      <div class="ss-amt" id="splitAmt">₱4,800.00</div>
+      <div class="ss-sub" id="splitSub">Split equally • ₱960.00 each • 5 people</div>
       <div class="split-bar"><i id="splitBar"></i></div>
       <div class="split-meta"><span id="splitPaid">0 of 5 paid</span><span id="splitRemain">₱0 remaining</span></div>
     </div>
     <div class="split-banner" id="splitBanner">🎉 Everyone has paid — settled automatically in real time!</div>
     <h3 class="done-h" style="margin-top:16px">Members <span style="font-weight:400;color:var(--sub)">(tap to toggle paid)</span></h3>
     <div class="members" id="splitList"></div>
+    <button class="add-cat" style="margin-top:12px" onclick="openAddPerson()">＋ Add Person to Split</button>
     <div class="auto-card">
       <span class="auto-ic">⚡</span>
       <div><b>Auto-settle</b><span>Automatically settles the split in real time once everyone has paid.</span></div>
@@ -779,6 +845,43 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
       <button class="s1" onclick="settleNow()">Settle Up Now</button>
       <button class="s2" onclick="toast('Split link copied — share with your group 🔗')">Share Split</button>
     </div>
+  </div>
+
+  <!-- Add Person sheet -->
+  <div class="backdrop" id="apBack" onclick="closeAddPerson()"></div>
+  <div class="sheet" id="apSheet">
+    <div class="sheet-grab"></div>
+    <h3>Add Person to Split</h3>
+    <p class="sheet-sub">The bill is split equally among everyone</p>
+    <div class="acct-wrap" style="margin:0 0 10px">
+      <label>NAME</label>
+      <input id="apName" placeholder="e.g. Miguel Torres" maxlength="24">
+    </div>
+    <div class="cs-row"><span>Split total</span><b id="apTotal">—</b></div>
+    <div class="cs-row" style="border:0"><span>New share each</span><b id="apShare">—</b></div>
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="savePerson()">Add Person</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeAddPerson()">Cancel</button>
+  </div>
+
+  <!-- New Split sheet -->
+  <div class="backdrop" id="nsBack" onclick="closeNewSplit()"></div>
+  <div class="sheet" id="nsSheet">
+    <div class="sheet-grab"></div>
+    <h3>Create New Split</h3>
+    <p class="sheet-sub">You paid the bill — add people and they'll owe their share</p>
+    <div class="acct-wrap" style="margin:0 0 10px">
+      <label>SPLIT NAME</label>
+      <input id="nsName" placeholder="e.g. Friday Night Out" maxlength="30">
+    </div>
+    <div class="acct-wrap" style="margin:0 0 12px">
+      <label>TOTAL BILL AMOUNT (₱)</label>
+      <input id="nsAmt" inputmode="numeric" placeholder="e.g. 1200" oninput="this.value=this.value.replace(/[^\d.]/g,'');nsPreview()">
+    </div>
+    <p class="bill-h" style="margin:0 0 8px">PICK AN ICON</p>
+    <div class="icon-grid" id="nsIcons"></div>
+    <div class="cs-row" style="margin-top:6px;border:0"><span>You front the bill</span><b id="nsShare">₱0.00</b></div>
+    <button class="btn-primary" style="width:100%;margin-top:12px" onclick="saveNewSplit()">Create Split</button>
+    <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="closeNewSplit()">Cancel</button>
   </div>
 </section>
 
@@ -1223,13 +1326,13 @@ function openTxn(i){
 
 /* ---------- 6. MONEY MANAGER ---------- */
 const MMDATA={
-  'June 2025':{budget:25000,cats:[
+  'June 2025':{cats:[
     {ic:'🍔',n:'Food & Dining',sp:6200,b:8000,c:'#FF7A59'},
     {ic:'🚌',n:'Transportation',sp:2450,b:3000,c:'#4DABF7'},
     {ic:'🛍️',n:'Shopping',sp:4800,b:5000,c:'#9775FA'},
     {ic:'💡',n:'Bills & Utilities',sp:4800,b:9000,c:'#38D9A9'},
     {ic:'📱',n:'Load & Telco',sp:550,b:1000,c:'#F59F00'}]},
-  'May 2025':{budget:25000,cats:[
+  'May 2025':{cats:[
     {ic:'🍔',n:'Food & Dining',sp:7100,b:8000,c:'#FF7A59'},
     {ic:'🚌',n:'Transportation',sp:2850,b:3000,c:'#4DABF7'},
     {ic:'🛍️',n:'Shopping',sp:6300,b:5000,c:'#9775FA'},
@@ -1240,21 +1343,24 @@ const mmKeys=Object.keys(MMDATA);let mmIdx=0;
 function mmShift(d){mmIdx=(mmIdx+d+mmKeys.length)%mmKeys.length;renderMM();}
 function renderMM(){
   const key=mmKeys[mmIdx],d=MMDATA[key];
+  const cats=d.cats;
+  const budget=cats.reduce((s,c)=>s+c.b,0);
+  const spent=cats.reduce((s,c)=>s+c.sp,0);
+  const pct=Math.round(spent/(budget||1)*100);
   $('mmLabel').textContent=key;
-  const spent=d.cats.reduce((s,c)=>s+c.sp,0);
-  $('mmSpent').textContent=peso0(spent);
-  $('mmBudgetTxt').textContent='of '+peso0(d.budget);
-  $('mmLeft').textContent=peso0(d.budget-spent);
+  $('mmSpent').textContent=mmPctView?pct+'%':peso0(spent);
+  $('mmBudgetTxt').textContent=mmPctView?'of budget used':'of '+peso0(budget);
+  $('mmLeft').textContent=peso0(budget-spent);
   $('mmAvg').textContent=peso0(Math.round(spent/30));
-  $('mmCatsN').textContent=d.cats.length;
+  $('mmCatsN').textContent=cats.length;
   let acc=0;const segs=[];
-  d.cats.forEach(c=>{const p=c.sp/d.budget*100;segs.push(`${c.c} ${acc.toFixed(1)}% ${(acc+p).toFixed(1)}%`);acc+=p;});
-  segs.push('#E9EEF5 '+acc.toFixed(1)+'% 100%');
+  cats.forEach(c=>{const p=c.sp/(budget||1)*100;segs.push(`${c.c} ${acc.toFixed(1)}% ${(acc+p).toFixed(1)}%`);acc+=p;});
+  segs.push('#E9EEF5 '+Math.min(100,acc).toFixed(1)+'% 100%');
   $('mmDonut').style.background=`conic-gradient(${segs.join(',')})`;
-  $('mmLegend').innerHTML=d.cats.map(c=>`<div class="lg"><i style="background:${c.c}"></i><span>${c.n}</span><b>${peso0(c.sp)}</b></div>`).join('');
-  $('mmCats').innerHTML=d.cats.map(c=>{
+  $('mmLegend').innerHTML=cats.map(c=>`<div class="lg"><i style="background:${c.c}"></i><span>${c.n}</span><b>${mmPctView?Math.round(c.sp/c.b*100)+'%':peso0(c.sp)}</b></div>`).join('');
+  $('mmCats').innerHTML=cats.map((c,idx)=>{
     const p=Math.min(100,Math.round(c.sp/c.b*100));
-    return `<div class="cat">
+    return `<div class="cat" onclick="openEditCat(${idx})">
       <div class="cat-top">
         <span class="cat-ic" style="background:${c.c}22">${c.ic}</span>
         <div class="cat-nm"><b>${c.n}</b><span>${peso0(c.sp)} of ${peso0(c.b)} budget</span></div>
@@ -1265,20 +1371,87 @@ function renderMM(){
   }).join('');
 }
 
+/* ----- ADD BUDGET CATEGORY (wired) ----- */
+const ABICONS=['🍔','🚌','🛍️','💡','📱','🏥','🎬','🎮','✈️','📚','🐶','🎁'];
+const ABCOLORS=['#FF922B','#66D9E8','#F06595','#B197FC','#20C997','#748FFC','#66A80F','#E5484D','#74C0FC','#FCC419','#FF6B8B','#9775FA'];
+let abSel='🏥';
+function openAddBudget(){
+  $('abMonth').textContent=mmKeys[mmIdx];
+  $('abName').value='';$('abBudget').value='';
+  renderAbIcons();
+  $('abBack').classList.add('show');$('abSheet').classList.add('show');
+}
+function renderAbIcons(){
+  $('abIcons').innerHTML=ABICONS.map(ic=>`<button class="ibtn${ic===abSel?' on':''}" onclick="abSel='${ic}';renderAbIcons()">${ic}</button>`).join('');
+}
+function saveBudget(){
+  const name=$('abName').value.trim();
+  const b=Math.round((Number($('abBudget').value.replace(/[^\d.]/g,''))||0)*100)/100;
+  if(!name){toast('Enter a category name ✍️');return;}
+  if(!b||b<50){toast('Enter a budget of at least ₱50');return;}
+  const cats=MMDATA[mmKeys[mmIdx]].cats;
+  cats.push({ic:abSel,n:name,sp:0,b,c:ABCOLORS[cats.length%ABCOLORS.length]});
+  renderMM();closeAddBudget();
+  toast(`"${name}" budget added ✅`);
+}
+function closeAddBudget(){$('abBack').classList.remove('show');$('abSheet').classList.remove('show');}
+
+/* ----- EDIT CATEGORY: add spending / edit budget / ₱-% view (wired) ----- */
+let mmPctView=false,edCatIdx=-1;
+function mmToggleView(){mmPctView=!mmPctView;renderMM();}
+function openEditCat(i){
+  edCatIdx=i;
+  const c=MMDATA[mmKeys[mmIdx]].cats[i];
+  $('edTitle').textContent=c.ic+' '+c.n;
+  $('edSub').textContent='Tracking for '+mmKeys[mmIdx];
+  $('edSpent').textContent=peso0(c.sp);
+  $('edBud').textContent=peso0(c.b);
+  $('edPct').textContent=Math.round(c.sp/c.b*100)+'%';
+  $('edAdd').value='';
+  $('edBudget').value=c.b;
+  $('edBack').classList.add('show');$('edSheet').classList.add('show');
+}
+function edQuick(v){$('edAdd').value=v;}
+function saveEditCat(){
+  if(edCatIdx<0)return;
+  const c=MMDATA[mmKeys[mmIdx]].cats[edCatIdx];
+  const add=Math.round((Number($('edAdd').value)||0)*100)/100;
+  const newB=Math.round((Number($('edBudget').value)||0)*100)/100;
+  let did=false;
+  if(newB&&newB>=50&&newB!==c.b){c.b=newB;toast('Budget updated to '+peso0(newB)+' ✅');did=true;}
+  if(add>0){
+    if(add>balance){toast('Insufficient wallet balance 😅');return;}
+    c.sp=Math.round((c.sp+add)*100)/100;
+    balance=Math.round((balance-add)*100)/100;
+    TXNS[0].items.unshift({ic:c.ic,bg:c.c+'22',name:c.n,cat:'Money Manager',amt:-add,tm:nowTime()});
+    buildAll();renderHome();
+    toast(`Logged ${peso0(add)} to ${c.n} ✅`);
+    did=true;
+  }
+  if(!did)toast('Nothing to save — enter an amount ✍️');
+  renderMM();closeEditCat();
+}
+function closeEditCat(){$('edBack').classList.remove('show');$('edSheet').classList.remove('show');}
+
 /* ---------- 8. SECURITY ---------- */
 function flip(row){const s=row.querySelector('.switch');s.classList.toggle('on');toast(s.classList.contains('on')?'Security layer enabled ✅':'Security layer disabled');}
 function lockNow(){toast('Device locked 🔒');setTimeout(()=>go('s-login'),700);}
 
 /* ---------- 9. SMART SPLIT ---------- */
-let SPLIT={each:960,members:[
+let SPLIT={total:4800,members:[
   {n:'Juan Dela Cruz',c:'#0A84FF',paid:true,you:true},
   {n:'Maria Santos',c:'#FF6B8B',paid:true},
   {n:'Carlo Reyes',c:'#4DABF7',paid:true},
   {n:'Anna Lim',c:'#B197FC',paid:false},
   {n:'Jun Cruz',c:'#63E6BE',paid:false},
 ]};
+let splitIc='🍽️',splitTitle='Team Dinner — Inihaw';
 function renderSplit(){
   const m=SPLIT.members,paid=m.filter(x=>x.paid).length,n=m.length;
+  SPLIT.each=SPLIT.total/n;
+  $('splitTitle').textContent=splitIc+' '+splitTitle;
+  $('splitAmt').textContent=peso(SPLIT.total);
+  $('splitSub').textContent=`Split equally • ${peso(SPLIT.each)} each • ${n===1?'1 person':n+' people'}`;
   $('splitBar').style.width=(paid/n*100)+'%';
   $('splitPaid').textContent=`${paid} of ${n} paid`;
   $('splitRemain').textContent=peso0((n-paid)*SPLIT.each)+' remaining';
@@ -1301,6 +1474,51 @@ function settleNow(){
   const pending=SPLIT.members.filter(x=>!x.paid).length;
   toast(pending?`Waiting for ${pending} member${pending>1?'s':''} to pay ⏳`:'This split is fully settled ✓');
 }
+
+/* ----- ADD PERSON (wired) ----- */
+const PCOLORS=['#F59F00','#FF922B','#20C997','#66D9E8','#F06595','#748FFC','#B197FC','#E5484D','#66A80F','#74C0FC','#FF6B8B','#FCC419'];
+function openAddPerson(){
+  if(SPLIT.members.length>=12){toast('Max 12 people per split 😅');return;}
+  $('apName').value='';
+  $('apTotal').textContent=peso(SPLIT.total);
+  $('apShare').textContent=peso(SPLIT.total/(SPLIT.members.length+1));
+  $('apBack').classList.add('show');$('apSheet').classList.add('show');
+}
+function savePerson(){
+  const name=$('apName').value.trim();
+  if(!name){toast('Enter a name ✍️');return;}
+  SPLIT.members.push({n:name,c:PCOLORS[SPLIT.members.length%PCOLORS.length],paid:false});
+  renderSplit();closeAddPerson();
+  toast(`${name} added — ${peso(SPLIT.each)} each now 👥`);
+}
+function closeAddPerson(){$('apBack').classList.remove('show');$('apSheet').classList.remove('show');}
+
+/* ----- NEW SPLIT (wired) ----- */
+const NSICONS=['🍽️','🎉','🏖️','🛒','🎬','⛽','🏨','☕','🎁','🍺'];
+let nsSel='🎉';
+function openNewSplit(){
+  $('nsName').value='';$('nsAmt').value='';$('nsShare').textContent='₱0.00';
+  renderNsIcons();
+  $('nsBack').classList.add('show');$('nsSheet').classList.add('show');
+}
+function renderNsIcons(){
+  $('nsIcons').innerHTML=NSICONS.map(ic=>`<button class="ibtn${ic===nsSel?' on':''}" onclick="nsSel='${ic}';renderNsIcons()">${ic}</button>`).join('');
+}
+function nsPreview(){
+  const a=Number($('nsAmt').value.replace(/[^\d.]/g,''))||0;
+  $('nsShare').textContent=peso(a);
+}
+function saveNewSplit(){
+  const name=$('nsName').value.trim();
+  const amt=Math.round((Number($('nsAmt').value.replace(/[^\d.]/g,''))||0)*100)/100;
+  if(!name){toast('Give your split a name ✍️');return;}
+  if(!amt||amt<20){toast('Enter the total bill (min ₱20)');return;}
+  splitIc=nsSel;splitTitle=name;
+  SPLIT={total:amt,members:[{n:'Juan Dela Cruz',c:'#0A84FF',paid:true,you:true}]};
+  renderSplit();closeNewSplit();
+  toast(`"${name}" created — now add people 👥`);
+}
+function closeNewSplit(){$('nsBack').classList.remove('show');$('nsSheet').classList.remove('show');}
 
 /* ---------- 10. SEND MONEY ---------- */
 const CONTACTS=[
@@ -1657,14 +1875,22 @@ function markAllRead(){NOTIFS.forEach(n=>n.unread=false);renderNotifs();toast('A
 /* ---------- 16. PROFILE ---------- */
 function logout(){toast('Logged out 👋');setTimeout(()=>go('s-login'),500);}
 
-/* ---------- CASH IN ---------- */
-function openCashIn(){$('cashBack').classList.add('show');$('cashSheet').classList.add('show');}
+/* ---------- CASH IN (source + quick + custom, all wired) ---------- */
+let ciSource='BPI';
+function ciSetSrc(el,s){[...el.parentNode.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');ciSource=s;}
+function openCashIn(){$('ciCustom').value='';$('cashBack').classList.add('show');$('cashSheet').classList.add('show');}
 function closeCashIn(){$('cashBack').classList.remove('show');$('cashSheet').classList.remove('show');}
+function cashInCustom(){
+  const v=Math.round((Number($('ciCustom').value)||0)*100)/100;
+  if(!v||v<20){toast('Enter at least ₱20');return;}
+  cashIn(v);
+}
 function cashIn(v){
   balance+=v;
-  TXNS[0].items.unshift({ic:'💵',bg:'#DFF5E7',name:'Cash In • BPI',cat:'Add Money',amt:v,tm:nowTime()});
+  const ic=ciSource==='7-Eleven'?'🏪':ciSource==='Mastercard'?'💳':'🏦';
+  TXNS[0].items.unshift({ic,bg:'#DFF5E7',name:'Cash In • '+ciSource,cat:'Add Money',amt:v,tm:nowTime()});
   buildAll();renderHome();closeCashIn();
-  toast(`Added ${peso0(v)} to your wallet 🎉`);
+  toast(`Added ${peso0(v)} from ${ciSource} 🎉`);
 }
 
 /* ---------- INIT ---------- */
